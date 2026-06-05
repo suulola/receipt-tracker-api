@@ -15,12 +15,14 @@ Rules:
 - If multiple images are provided, they are sequential segments of the SAME physical receipt (top-to-bottom order)
 - Deduplicate: if the same item or store header appears in more than one image, include it only once
 - Normalize units: "3LB" → quantity 3, unit "lb" | "1.5KG" → quantity 1.5, unit "kg" | "1L" → quantity 1, unit "L"
+- Quantity multiplier: when a line starts with "Nx" (e.g. "5x Compliments Still Water (500 ml × 40 ct)"), the leading number (5) is the quantity purchased. Parenthetical size/pack descriptors like "(500 ml × 40 ct)" describe the product packaging — put them in the unit field (e.g. unit="500ml × 40ct"), never use them as the quantity.
 - Infer unit_price when not shown: unit_price = total_price / quantity
 - Assign categories based on the real-world nature of the item, not the store type
 - transaction_date must be YYYY-MM-DD format (e.g. "05/11/2026" → "2026-05-11")
 - province must be a two-letter Canadian code: ON, BC, AB, QC, MB, SK, NS, NB, NL, PE, NT, YT, NU
 - customer_name: ONLY set if a loyalty or membership name is explicitly printed (e.g. Costco member name). Never use operator numbers or cashier IDs.
 - savings: extract discount amount per item if shown (e.g. "SAVED $15.00" → savings 15.00)
+- Delivery app receipts (DoorDash, Uber Eats, Skip, Instacart): use the grocery store name printed on the receipt (not the delivery platform name). Exclude non-grocery charges from items: delivery fee, service fee, platform fee, regulatory fee, bag fee, tip/gratuity, and any platform discount lines.
 - Omit any field that is not visible or not applicable
 - Items list must include every purchasable line — skip subtotal, tax, total, and promotional text lines"""
 
@@ -46,7 +48,7 @@ class OcrItemExtraction(BaseModel):
     raw_name: str = Field(description="Exact item name as printed on the receipt")
     category: CategorySlug = Field(description="Real-world category of this item")
     quantity: Optional[float] = Field(None, description="Numeric quantity purchased")
-    unit: Optional[str] = Field(None, description="Unit: lb, kg, L, mL, each, pack, bag, box, etc.")
+    unit: Optional[str] = Field(None, description="Unit of measure: lb, kg, L, mL, each, pack, bag, box, etc. For multi-packs use the pack descriptor e.g. '500ml × 40ct', '6-pack'.")
     unit_price: Optional[float] = Field(None, description="Price per single unit")
     total_price: float = Field(description="Total price for this line item")
     savings: Optional[float] = Field(None, description="Discount amount shown for this item if any")
