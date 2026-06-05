@@ -89,6 +89,7 @@ def _openai_image_block(image: str) -> dict:
 
 
 async def extract_receipt(images: list[str]) -> OcrExtraction:
+    """Send 1–5 receipt images to the configured AI provider and return structured data."""
     provider = settings.ai_provider
     count = len(images)
     user_text = (
@@ -104,7 +105,7 @@ async def extract_receipt(images: list[str]) -> OcrExtraction:
             response_model=OcrExtraction,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
-                {
+                {  # type: ignore[list-item, misc]  # instructor multimodal format
                     "role": "user",
                     "content": [
                         {"type": "text", "text": user_text},
@@ -122,7 +123,7 @@ async def extract_receipt(images: list[str]) -> OcrExtraction:
         system=SYSTEM_PROMPT,
         response_model=OcrExtraction,
         messages=[
-            {
+            {  # type: ignore[list-item, misc]  # instructor multimodal format
                 "role": "user",
                 "content": [
                     {"type": "text", "text": user_text},

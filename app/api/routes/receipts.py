@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 # ── Date param helper ─────────────────────────────────────────────────────────
 
 def _parse_date_param(value: Optional[str], param_name: str) -> Optional[date]:
+    """Parse a YYYY-MM-DD query string date, raising HTTP 400 on invalid format."""
     if value is None:
         return None
     try:
@@ -32,6 +33,7 @@ def _eq_or_null(col, val):
 
 
 async def _upsert_store(session: AsyncSession, store_in) -> Store:
+    """Return the existing Store row matching name + branch + city, or insert and return a new one."""
     stmt = select(Store).where(
         Store.name == store_in.name,
         _eq_or_null(Store.branch, store_in.branch),
@@ -57,6 +59,7 @@ async def _upsert_store(session: AsyncSession, store_in) -> Store:
 
 
 def _build_receipt_out(receipt: Receipt) -> ReceiptOut:
+    """Map a fully-loaded Receipt ORM object to the ReceiptOut response schema, traversing item and category relations."""
     items_out = []
     for ri in receipt.items:
         items_out.append(
@@ -105,6 +108,7 @@ async def create_receipt(
     data: ReceiptIn,
     session: AsyncSession = Depends(get_session),
 ) -> dict:
+    """Persist a new receipt: upsert the store, normalise each item via fuzzy match, and link all rows in one transaction."""
     async with session.begin():
         store = await _upsert_store(session, data.store)
 
@@ -162,6 +166,7 @@ async def list_receipts(
     offset: int = Query(0, ge=0),
     session: AsyncSession = Depends(get_session),
 ) -> list:
+    """Return a paginated, filterable summary list of receipts ordered by purchase date descending."""
     stmt = (
         select(
             Receipt,
@@ -223,9 +228,26 @@ async def get_receipt(
     receipt_id: uuid.UUID,
     session: AsyncSession = Depends(get_session),
 ) -> dict:
+    """Return a single receipt with full item detail, or 404 if not found."""
     result = await session.execute(select(Receipt).where(Receipt.id == receipt_id))
     receipt = result.scalar_one_or_none()
     if not receipt:
         raise HTTPException(status_code=404, detail="Receipt not found")
 
     return _build_receipt_out(receipt).model_dump(by_alias=True, mode="json")
+
+
+# ── DELETE /receipts/:id ──────────────────────────────────────────────────────
+
+@router.delete("/{receipt_id}", status_code=204)
+async def delete_receipt(
+    receipt_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+) -> None:
+    """Delete a receipt and its line items (cascade). Returns 204 on success, 404 if not found."""
+    result = await session.execute(select(Receipt).where(Receipt.id == receipt_id))
+    receipt = result.scalar_one_or_none()
+    if not receipt:
+        raise HTTPException(status_code=404, detail="Receipt not found")
+    await session.delete(receipt)
+    await session.commit()

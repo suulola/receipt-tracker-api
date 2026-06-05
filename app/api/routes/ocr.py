@@ -20,12 +20,13 @@ async def ocr_receipt(request: Request, data: OcrRequest) -> dict:
     if not data.images:
         raise HTTPException(status_code=400, detail="At least one image is required")
     if len(data.images) > 5:
+        print(f"Received {len(data.images)} images, which exceeds the limit", end = " ")
         raise HTTPException(status_code=400, detail="Maximum 5 images per receipt")
     for img in data.images:
         if len(img.encode()) > MAX_IMAGE_BYTES:
             raise HTTPException(status_code=413, detail="Each image must be under 5 MB")
 
-    extraction = await extract_receipt(data.images)
+    extraction = await extract_receipt(images = data.images)
 
     # Convert OcrExtraction → ReceiptIn so the response shape matches
     # exactly what POST /receipts expects — the frontend can confirm then

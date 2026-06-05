@@ -133,6 +133,15 @@ class CompareResponse(CamelModel):
     results: list[CompareResult]
 
 
+# ── Items browse ─────────────────────────────────────────────────────────────
+
+class ItemSummary(CamelModel):
+    normalized_name: str
+    category_slug: str
+    category_label: str
+    purchase_count: int
+
+
 # ── Analyse ───────────────────────────────────────────────────────────────────
 
 class AnalyseRequest(CamelModel):

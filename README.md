@@ -54,6 +54,7 @@ API runs at `http://localhost:8000`. Interactive docs at `http://localhost:8000/
 | `make install` | Create virtualenv and install dependencies |
 | `make migrate` | Apply `schema.sql` to the configured database |
 | `make dev` | Start the API server with hot reload |
+| `make typecheck` | Run mypy static type checker across all source files |
 
 ## API Endpoints
 
@@ -110,3 +111,16 @@ FRONTEND_URL=http://localhost:3000,https://your-app.vercel.app
 ### What's not yet implemented
 
 See `.claude/plans/security-todo.md` for the outstanding items (authentication, soft deletes, etc.).
+
+## Known Limitations
+
+### `GET /items` — unbounded result set
+
+The item browse page fetches the full list of unique normalised items from `GET /items` in a single request and filters client-side as the user types. This works well at personal scale (tens to low hundreds of unique items).
+
+**The problem at scale:** If this app is used by multiple people, the items table grows proportionally. 100 users × 500 unique items each = 50,000 rows returned in a single request on every page load — which will be slow and memory-heavy.
+
+**TODO:** Before making this multi-user, replace the current fetch-all approach with:
+- Server-side search: `GET /items?q=banana` — only return items matching the query
+- Pagination or infinite scroll on the browse list
+- A debounced search input that triggers a new fetch on each keystroke (rather than filtering a local array)

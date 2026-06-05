@@ -12,10 +12,12 @@ class Settings(BaseSettings):
 
     @property
     def frontend_origins(self) -> list[str]:
+        """Split comma-separated FRONTEND_URL into a list for CORS allow-origins."""
         return [url.strip() for url in self.frontend_url.split(",") if url.strip()]
 
     @property
     def async_database_url(self) -> str:
+        """Rewrite postgres:// → postgresql+asyncpg:// as required by asyncpg."""
         url = self.database_url
         # asyncpg requires postgresql+asyncpg:// scheme
         if url.startswith("postgresql://"):
