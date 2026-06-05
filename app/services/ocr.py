@@ -15,14 +15,14 @@ Rules:
 - If multiple images are provided, they are sequential segments of the SAME physical receipt (top-to-bottom order)
 - Deduplicate: if the same item or store header appears in more than one image, include it only once
 - Normalize units: "3LB" → quantity 3, unit "lb" | "1.5KG" → quantity 1.5, unit "kg" | "1L" → quantity 1, unit "L"
-- Quantity multiplier: when a line starts with "Nx" (e.g. "5x Compliments Still Water (500 ml × 40 ct)"), the leading number (5) is the quantity purchased. Parenthetical size/pack descriptors like "(500 ml × 40 ct)" describe the product packaging — put them in the unit field (e.g. unit="500ml × 40ct"), never use them as the quantity.
+- Quantity multiplier: when a line starts with "Nx" (e.g. "5x Compliments Still Water (500 ml × 40 ct)"), the leading number (5) is the quantity purchased. Copy the parenthetical pack descriptor verbatim into the unit field (e.g. unit="500ml × 40ct") — do NOT prepend the multiplier N to the unit string. Never use the pack descriptor as the quantity.
 - Infer unit_price when not shown: unit_price = total_price / quantity
 - Assign categories based on the real-world nature of the item, not the store type
 - transaction_date must be YYYY-MM-DD format (e.g. "05/11/2026" → "2026-05-11")
 - province must be a two-letter Canadian code: ON, BC, AB, QC, MB, SK, NS, NB, NL, PE, NT, YT, NU
 - customer_name: ONLY set if a loyalty or membership name is explicitly printed (e.g. Costco member name). Never use operator numbers or cashier IDs.
 - savings: extract discount amount per item if shown (e.g. "SAVED $15.00" → savings 15.00)
-- Delivery app receipts (DoorDash, Uber Eats, Skip, Instacart): use the grocery store name printed on the receipt (not the delivery platform name). Exclude non-grocery charges from items: delivery fee, service fee, platform fee, regulatory fee, bag fee, tip/gratuity, and any platform discount lines.
+- Delivery app receipts (DoorDash, Uber Eats, Skip, Instacart): use the grocery store name printed on the receipt (not the delivery platform name). Include ALL line items — grocery items AND platform charges (delivery fee, service fee, bag fee, regulatory fee, tip/gratuity, discounts) — each as a separate item with category "other". Still populate the subtotal, tax, and total fields from the receipt summary — subtotal = grocery items subtotal, tax = any tax charged, total = final amount charged.
 - Omit any field that is not visible or not applicable
 - Items list must include every purchasable line — skip subtotal, tax, total, and promotional text lines"""
 
